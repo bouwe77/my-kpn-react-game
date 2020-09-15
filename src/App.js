@@ -1,22 +1,84 @@
-import React from "react";
+import React, { useState } from "react";
+import Buttons from "./Buttons";
+import { directions, itemType, movePlayer } from "./functions";
+import GameOver from "./GameOver";
+import { getMaze } from "./mazes";
+import { useInterval } from "./useInterval";
+import { useKeyPress } from "./useKeyPress";
 
 function App() {
+  const [maze, setMaze] = useState(getMaze);
+  const [score, setScore] = useState(0);
+  const [direction, setDirection] = useState(directions.IDLE);
+
+  useKeyPress("ArrowUp", () => setDirection(directions.UP));
+  useKeyPress("ArrowDown", () => setDirection(directions.DOWN));
+  useKeyPress("ArrowLeft", () => setDirection(directions.LEFT));
+  useKeyPress("ArrowRight", () => setDirection(directions.RIGHT));
+
+  useInterval(() => {
+    goToDirection();
+  }, 400);
+
+  function goToDirection() {
+    const updatedMaze = movePlayer(maze, direction, onMove);
+    setMaze(updatedMaze);
+  }
+
+  function onMove(item) {
+    if (item.type === itemType.DOT) setScore(score + 1);
+    if (item.type === itemType.FOOD) setScore(score + 10);
+  }
+
+  function resetGame() {
+    setMaze(getMaze());
+    setScore(0);
+  }
+
   return (
     <div style={{ textAlign: "center" }}>
-      <img
-        src="https://uploads-eu-west-1.insided.com/kpn-business/attachment/4daa74a9-13fe-4df3-bf2a-fcceb353e964_thumb.png"
-        height="50"
-        alt="KPN logo"
-      />
-      <img
-        src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9Ii0xMS41IC0xMC4yMzE3NCAyMyAyMC40NjM0OCI+CiAgPHRpdGxlPlJlYWN0IExvZ288L3RpdGxlPgogIDxjaXJjbGUgY3g9IjAiIGN5PSIwIiByPSIyLjA1IiBmaWxsPSIjNjFkYWZiIi8+CiAgPGcgc3Ryb2tlPSIjNjFkYWZiIiBzdHJva2Utd2lkdGg9IjEiIGZpbGw9Im5vbmUiPgogICAgPGVsbGlwc2Ugcng9IjExIiByeT0iNC4yIi8+CiAgICA8ZWxsaXBzZSByeD0iMTEiIHJ5PSI0LjIiIHRyYW5zZm9ybT0icm90YXRlKDYwKSIvPgogICAgPGVsbGlwc2Ugcng9IjExIiByeT0iNC4yIiB0cmFuc2Zvcm09InJvdGF0ZSgxMjApIi8+CiAgPC9nPgo8L3N2Zz4K"
-        height="47"
-        alt="React logo"
-      />
-      <h1>Live Coding a Game in React</h1>
-      <p>Welkom allemaal!</p>
+      <h1>My KPN Game</h1>
+
+      <div>SCORE: {score}</div>
+
+      <div>
+        {maze.reachedExit && <GameOver score={score} tryAgain={resetGame} />}
+      </div>
+
+      <svg width={maze.width} height={maze.height}>
+        <rect width={maze.width} height={maze.height} />
+
+        {maze.items.map(function (item) {
+          return <Item item={item} />;
+        })}
+      </svg>
+
+      <Buttons buttonClicked={(direction) => setDirection(direction)} />
     </div>
   );
+}
+
+function Item({ item }) {
+  if (item.type === itemType.PLAYER)
+    return <circle r="7" fill="yellow" cx={item.x} cy={item.y} />;
+  if (item.type === itemType.FOOD)
+    return <circle r="7" fill="green" cx={item.x} cy={item.y} />;
+  if (item.type === itemType.DOT)
+    return <circle r="2" fill="green" cx={item.x} cy={item.y} />;
+  if (item.type === itemType.EXIT || item.type === itemType.NONE) return null;
+  else
+    return (
+      <rect
+        width="20"
+        height="20"
+        x={item.x}
+        y={item.y}
+        fill="brown"
+        rx="5"
+        ry="5"
+        stroke="black"
+      />
+    );
 }
 
 export default App;
